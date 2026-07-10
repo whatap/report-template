@@ -20,7 +20,7 @@ data-type: MXQL
 cards:
   - title: 평균 GPU 활용률
     query: |
-      >> avg(DCGM_FI_DEV_GPU_UTIL)
+      >> avg(DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
     value-field: value
     transform:
       - {type: reduce, fields: {value: avg}}
@@ -58,7 +58,7 @@ cards:
 data-type: MXQL
 title: GPU 그룹별 GPU 활용률 추이
 query: |
-  >> avg by (gpu_group) (DCGM_FI_DEV_GPU_UTIL{gpu_group!=""})
+  >> avg by (gpu_group) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL{gpu_group!=""})
 x-axis: {field: time, format: epoch-ms}
 y-axis:
   - {id: left, title: GPU 활용률, unit: "%"}
@@ -66,6 +66,7 @@ series:
   - {name: GPU 활용률, field: value, y-axis: left}
 series-by: gpu_group
 transform:
+  - {type: scale, field: value, factor: 100}
   - {type: filterParam, field: gpu_group, param: gpu_group}
   - {type: groupByTime, interval: 1d, agg: avg, by: gpu_group}
 ```

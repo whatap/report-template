@@ -18,7 +18,7 @@ data-type: MXQL
 cards:
   - title: 평균 GPU 사용률
     query: |
-      >> avg by (Hostname) (DCGM_FI_DEV_GPU_UTIL)
+      >> avg by (Hostname) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
     value-field: value
     transform:
       - {type: filterParam, field: Hostname, param: node}
@@ -60,7 +60,7 @@ cards:
 data-type: MXQL
 title: 일별 GPU 사용률 추이
 query: |
-  >> avg by (Hostname) (DCGM_FI_DEV_GPU_UTIL)
+  >> avg by (Hostname) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
 x-axis: {field: time, format: epoch-ms}
 y-axis:
   - {id: left, title: GPU 사용률, unit: "%"}
@@ -68,6 +68,7 @@ series:
   - {name: GPU 사용률, field: value, y-axis: left, type: areaspline}
 series-by: Hostname
 transform:
+  - {type: scale, field: value, factor: 100}
   - {type: filterParam, field: Hostname, param: node}
   - {type: groupByTime, interval: 1d, agg: avg}
 ```
@@ -96,9 +97,10 @@ transform:
 data-type: MXQL
 title: GPU 사용률 구간 분포
 query: |
-  >> avg by (Hostname) (DCGM_FI_DEV_GPU_UTIL)
+  >> avg by (Hostname) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
 value-field: value
 transform:
+  - {type: scale, field: value, factor: 100}
   - {type: filterParam, field: Hostname, param: node}
   - {type: binValues, field: value, thresholds: [30, 50, 80], labels: ["30% 미만", "30~50%", "50~80%", "80% 이상"]}
 ```
@@ -109,12 +111,13 @@ transform:
 data-type: MXQL
 title: 노드별 평균 GPU 사용률
 query: |
-  >> avg by (Hostname) (DCGM_FI_DEV_GPU_UTIL)
+  >> avg by (Hostname) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
 label-field: Hostname
 value-field: value
 unit: "%"
 horizontal: true
 transform:
+  - {type: scale, field: value, factor: 100}
   - {type: filterParam, field: Hostname, param: node}
   - {type: groupBy, keys: [Hostname], fields: {value: avg}}
   - {type: sortBy, by: value, desc: true}
@@ -127,7 +130,7 @@ transform:
 data-type: MXQL
 title: 노드별 GPU 상세 지표
 query: |
-  >> avg by (Hostname, modelName) (DCGM_FI_DEV_GPU_UTIL)
+  >> avg by (Hostname, modelName) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
 columns:
   - {field: Hostname, title: "노드", align: left}
   - {field: modelName, title: "GPU 모델", align: left}

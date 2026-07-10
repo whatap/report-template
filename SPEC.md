@@ -141,6 +141,7 @@ zebra: true
 | `binValues` | `field`, `thresholds[]`, `labels[]` | 값 구간별 count (도넛/분포용) | (유사: histogram) |
 | `ratio` | `numer`, `denom[]`, `as`, `scale`(기본 100) | `as = numer / sum(denom) * scale` 파생 컬럼 | calculateField |
 | `groupBy` | `keys[]`, `fields{name: fn}` | 그룹 집계 (fn: avg/sum/max/min/count) | groupBy |
+| `scale` | `field`, `factor` | 값 배율 (예: 0~1 비율 → %) | calculateField |
 | `sortBy` | `by`, `desc` | 정렬 | sortBy |
 | `limit` | `n` | 상위 n행 | limit |
 | `filterParam` | `field`, `param` | params 셀렉터 값으로 행 필터 (all이면 통과) | (우리 확장) |
@@ -156,6 +157,14 @@ zebra: true
 - **mock** — 시드 PRNG(LCG, seed=위젯 title)로 결정적 합성 데이터. `file://`로도 동작.
 - **live** — WhaTap 메트릭 API(`/yard/api/flush`) POST로 실데이터 조회. 인증은 실행 환경의
   세션이 담당하므로 **템플릿·렌더러·배포본에는 시크릿이 존재하지 않는다.**
+
+## 5.5 GPU 메트릭 선택 (MIG 주의)
+
+- 활용률: `DCGM_FI_DEV_WEIGHTED_GPU_UTIL` (0~1 비율 — `{type: scale, field: value, factor: 100}`로 % 변환).
+  `DCGM_FI_DEV_GPU_UTIL`은 **MIG 활성 GPU에서 미보고** — MIG 장비가 보고서에서 조용히 누락되므로 금지.
+- MIG 인스턴스별 활용률: `DCGM_FI_PROF_GR_ENGINE_ACTIVE` (인스턴스별 시리즈).
+- 메모리: `DCGM_FI_DEV_FB_USED`/`FB_TOTAL`은 MIG 인스턴스별로 정상 분할 수집.
+- 온도/전력(`GPU_TEMP`/`POWER_USAGE`)은 물리 GPU 단위만 존재 — MIG 인스턴스로 그룹핑 금지(중복 표시).
 
 ## 6. 검증 규칙 (생성기·수동 작성 공용)
 
