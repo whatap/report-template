@@ -5,7 +5,7 @@ params:
   - name: gpu_group
     label: GPU 그룹
     type: select
-    source: {category: kube_pod, tag: gpu_group}
+    source: {metric: DCGM_FI_DEV_WEIGHTED_GPU_UTIL, label: whatap_kube_label_gpu_group}
     default: all
 ---
 
@@ -59,17 +59,17 @@ cards:
 data-type: MXQL
 title: GPU 그룹별 GPU 활용률 추이
 query: |
-  >> avg by (gpu_group) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL{gpu_group!=""})
+  >> avg by (whatap_kube_label_gpu_group) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL{whatap_kube_label_gpu_group!=""})
 x-axis: {field: time, format: epoch-ms}
 y-axis:
   - {id: left, title: GPU 활용률, unit: "%"}
 series:
   - {name: GPU 활용률, field: value, y-axis: left}
-series-by: gpu_group
+series-by: whatap_kube_label_gpu_group
 transform:
   - {type: scale, field: value, factor: 100}
-  - {type: filterParam, field: gpu_group, param: gpu_group}
-  - {type: groupByTime, interval: 1d, agg: avg, by: gpu_group}
+  - {type: filterParam, field: whatap_kube_label_gpu_group, param: gpu_group}
+  - {type: groupByTime, interval: 1d, agg: avg, by: whatap_kube_label_gpu_group}
 ```
 
 ## GPU 메모리 사용률 추이
@@ -78,36 +78,33 @@ transform:
 data-type: MXQL
 title: GPU 그룹별 GPU 메모리 사용률 추이
 query: |
-  >> avg by (gpu_group) (DCGM_FI_DEV_FB_USED_PERCENT{gpu_group!=""})
+  >> avg by (whatap_kube_label_gpu_group) (DCGM_FI_DEV_FB_USED_PERCENT{whatap_kube_label_gpu_group!=""})
 x-axis: {field: time, format: epoch-ms}
 y-axis:
   - {id: left, title: 메모리 사용률, unit: "%"}
 series:
   - {name: 메모리 사용률, field: value, y-axis: left, type: areaspline}
-series-by: gpu_group
+series-by: whatap_kube_label_gpu_group
 transform:
-  - {type: filterParam, field: gpu_group, param: gpu_group}
-  - {type: groupByTime, interval: 1d, agg: avg, by: gpu_group}
+  - {type: filterParam, field: whatap_kube_label_gpu_group, param: gpu_group}
+  - {type: groupByTime, interval: 1d, agg: avg, by: whatap_kube_label_gpu_group}
 ```
 
 ## GPU 그룹별 GPU 메모리 사용량
 
 ```chart-bar
 data-type: MXQL
-title: GPU 그룹별 평균 GPU 메모리 사용량
+title: GPU 그룹별 평균 GPU 메모리 사용량 (MiB)
 query: |
-  CATEGORY kube_pod
-  TAGLOAD
-  TIME-RANGE {stime: {{ month-start }}, etime: {{ month-end }}}
-  SELECT [gpu_group, mem_usage]
-label-field: gpu_group
-value-field: mem_usage
-unit: "MB"
+  >> avg by (whatap_kube_label_gpu_group) (DCGM_FI_DEV_FB_USED{whatap_kube_label_gpu_group!=""})
+label-field: whatap_kube_label_gpu_group
+value-field: value
+unit: "MiB"
 horizontal: true
 transform:
-  - {type: filterParam, field: gpu_group, param: gpu_group}
-  - {type: groupBy, keys: [gpu_group], fields: {mem_usage: avg}}
-  - {type: sortBy, by: mem_usage, desc: true}
+  - {type: filterParam, field: whatap_kube_label_gpu_group, param: gpu_group}
+  - {type: groupBy, keys: [whatap_kube_label_gpu_group], fields: {value: avg}}
+  - {type: sortBy, by: value, desc: true}
   - {type: limit, n: 15}
 ```
 
@@ -117,14 +114,17 @@ transform:
 data-type: MXQL
 title: SM 활성도 및 점유율
 query: |
-  >> DCGM_FI_PROF_SM_ACTIVE
+  >> avg by (whatap_kube_label_gpu_group) (DCGM_FI_PROF_SM_ACTIVE{whatap_kube_label_gpu_group!=""})
 x-axis: {field: time, format: epoch-ms}
 y-axis:
   - {id: left, title: SM 활성도, unit: "%"}
 series:
   - {name: SM Active, field: value, y-axis: left, type: line}
+series-by: whatap_kube_label_gpu_group
 transform:
-  - {type: groupByTime, interval: 1d, agg: avg}
+  - {type: scale, field: value, factor: 100}
+  - {type: filterParam, field: whatap_kube_label_gpu_group, param: gpu_group}
+  - {type: groupByTime, interval: 1d, agg: avg, by: whatap_kube_label_gpu_group}
 ```
 
 ## GPU 연산 엔진 활용 분포
@@ -133,9 +133,10 @@ transform:
 data-type: MXQL
 title: Tensor Core 활용률 분포
 query: |
-  >> DCGM_FI_PROF_PIPE_TENSOR_ACTIVE
+  >> avg by (gpu) (DCGM_FI_PROF_PIPE_TENSOR_ACTIVE)
 value-field: value
 transform:
+  - {type: scale, field: value, factor: 100}
   - {type: binValues, field: value, thresholds: [30,50,80], labels: ["30% 미만","30~50%","50~80%","80% 이상"]}
 ```
 
@@ -145,19 +146,14 @@ transform:
 data-type: MXQL
 title: GPU 그룹별 GPU 리소스 사용 현황
 query: |
-  CATEGORY kube_pod
-  TAGLOAD
-  TIME-RANGE {stime: {{ month-start }}, etime: {{ month-end }}}
-  SELECT [gpu_group, cpu_total, mem_usage, gpu_request_counts]
+  >> avg by (whatap_kube_label_gpu_group) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL{whatap_kube_label_gpu_group!=""})
 columns:
-  - {field: gpu_group, title: "GPU 그룹", align: left}
-  - {field: cpu_total, title: "평균 CPU 사용률", align: right, format: "#,##0.0"}
-  - {field: mem_usage, title: "평균 메모리 사용량 (MB)", align: right, format: "#,##0"}
-  - {field: gpu_request_counts, title: "GPU 요청 수", align: right, format: "#,##0"}
+  - {field: whatap_kube_label_gpu_group, title: "GPU 그룹", align: left}
+  - {field: value, title: "평균 GPU 활용률 (%)", align: right, format: "#,##0.0", scale: 100}
 transform:
-  - {type: filterParam, field: gpu_group, param: gpu_group}
-  - {type: groupBy, keys: [gpu_group], fields: {cpu_total: avg, mem_usage: avg, gpu_request_counts: sum}}
-  - {type: sortBy, by: cpu_total, desc: true}
+  - {type: filterParam, field: whatap_kube_label_gpu_group, param: gpu_group}
+  - {type: groupBy, keys: [whatap_kube_label_gpu_group], fields: {value: avg}}
+  - {type: sortBy, by: value, desc: true}
 limit: 20
 zebra: true
 ```
