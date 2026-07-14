@@ -33,6 +33,7 @@ cards:
     transform:
       - {type: filterParam, field: Hostname, param: node}
       - {type: reduce, fields: {value: avg}}
+      - {type: scale, field: value, factor: 100}
     format: "#,##0.0"
     suffix: "%"
   - title: 평균 GPU 온도

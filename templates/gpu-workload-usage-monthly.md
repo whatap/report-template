@@ -33,6 +33,7 @@ cards:
     value-field: value
     transform:
       - {type: reduce, fields: {value: avg}}
+      - {type: scale, field: value, factor: 100}
     format: "#,##0.0"
     suffix: "%"
   - title: 평균 온도
@@ -86,6 +87,7 @@ series:
   - {name: 메모리 사용률, field: value, y-axis: left, type: areaspline}
 series-by: whatap_kube_label_gpu_group
 transform:
+  - {type: scale, field: value, factor: 100}
   - {type: filterParam, field: whatap_kube_label_gpu_group, param: gpu_group}
   - {type: groupByTime, interval: 1d, agg: avg, by: whatap_kube_label_gpu_group}
 ```
