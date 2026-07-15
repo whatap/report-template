@@ -1,5 +1,5 @@
 ---
-title: GPU 워크로드별 사용량 보고서 (6월)
+title: GPU 워크로드별 사용량 보고서
 cadence: monthly
 params:
   - name: gpu_group
@@ -11,7 +11,7 @@ params:
 
 # GPU 워크로드별 사용량 보고서
 
-6월 한 달간 GPU 활용률, 메모리, 전력, 온도 등 주요 지표를 GPU 그룹(파드 라벨 기준) 단위로 분석한 보고서입니다.
+한 달간 GPU 활용률, 메모리, 전력, 온도 등 주요 지표를 GPU 그룹(파드 라벨 기준) 단위로 분석한 보고서입니다.
 
 ## 주요 지표 요약
 
@@ -44,7 +44,7 @@ cards:
       - {type: reduce, fields: {value: avg}}
     format: "#,##0.0"
     suffix: "°C"
-  - title: 총 GPU 전력 소비
+  - title: 평균 총 전력 소비
     query: |
       >> sum(DCGM_FI_DEV_POWER_USAGE)
     value-field: value
@@ -133,7 +133,7 @@ transform:
 
 ```chart-donut
 data-type: MXQL
-title: Tensor Core 활용률 분포
+title: Tensor Core 활용률 분포 (시간 비중)
 query: |
   >> avg by (gpu) (DCGM_FI_PROF_PIPE_TENSOR_ACTIVE)
 value-field: value
