@@ -1,6 +1,8 @@
 ---
 title: GPU 워크로드별 사용량 보고서
 cadence: monthly
+author: jykim
+version: v1
 params:
   - name: gpu_group
     label: GPU 그룹

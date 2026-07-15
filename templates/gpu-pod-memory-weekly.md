@@ -1,6 +1,8 @@
 ---
 title: GPU 파드별 메모리 사용량 주간 보고서
 cadence: weekly
+author: jykim
+version: v1
 params:
   - name: namespace_filter
     label: 네임스페이스

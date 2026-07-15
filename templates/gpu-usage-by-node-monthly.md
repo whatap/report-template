@@ -1,6 +1,8 @@
 ---
 title: GPU 월간 사용량 보고서
 cadence: monthly
+author: jykim
+version: v1
 params:
   - name: node
     label: 노드
