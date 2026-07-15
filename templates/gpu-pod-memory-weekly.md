@@ -28,21 +28,24 @@ cards:
     transform:
       - {type: filterParam, field: namespace, param: namespace_filter}
       - {type: reduce, fields: {mem_usage: avg}}
+      - {type: scale, field: mem_usage, factor: 0.00000095367}
     format: "#,##0.0"
-    suffix: " MB"
+    suffix: " MiB"
   
-  - title: 최대 메모리 사용 파드
+  - title: 최대 파드 메모리 사용량 (주간 평균 기준)
     query: |
       CATEGORY kube_pod
       TAGLOAD
       TIME-RANGE {stime: {{ week-start }}, etime: {{ week-end }}}
-      SELECT [mem_usage]
+      SELECT [podName, mem_usage]
     value-field: mem_usage
     transform:
       - {type: filterParam, field: namespace, param: namespace_filter}
+      - {type: groupBy, keys: [podName], fields: {mem_usage: avg}}
       - {type: reduce, fields: {mem_usage: max}}
+      - {type: scale, field: mem_usage, factor: 0.00000095367}
     format: "#,##0.0"
-    suffix: " MB"
+    suffix: " MiB"
   
   - title: 전체 파드 수
     query: |
@@ -53,6 +56,7 @@ cards:
     value-field: podName
     transform:
       - {type: filterParam, field: namespace, param: namespace_filter}
+      - {type: groupBy, keys: [podName], fields: {podName: count}}
       - {type: reduce, fields: {podName: count}}
     format: "#,##0"
   
@@ -82,13 +86,14 @@ query: |
   SELECT [time, mem_usage, podName]
 x-axis: {field: time, format: epoch-ms}
 y-axis:
-  - {id: left, title: "메모리 사용량", unit: "MB"}
+  - {id: left, title: "메모리 사용량", unit: "MiB"}
 series:
   - {name: "메모리 사용량", field: mem_usage, y-axis: left, type: areaspline}
 series-by: podName
 transform:
   - {type: filterParam, field: namespace, param: namespace_filter}
-  - {type: groupByTime, interval: 1d, agg: avg}
+  - {type: groupByTime, interval: 1d, agg: avg, by: podName}
+  - {type: scale, field: mem_usage, factor: 0.00000095367}
 ```
 
 ## 메모리 Limit 대비 사용률 추이
@@ -124,7 +129,7 @@ query: |
 value-field: memory_per_limit
 transform:
   - {type: filterParam, field: namespace, param: namespace_filter}
-  - {type: reduce, fields: {memory_per_limit: avg}}
+  - {type: groupBy, keys: [podName], fields: {memory_per_limit: avg}}
   - {type: binValues, field: memory_per_limit, thresholds: [30, 50, 80], labels: ["30% 미만", "30~50%", "50~80%", "80% 이상"]}
 ```
 
@@ -141,13 +146,16 @@ query: |
 columns:
   - {field: podName, title: "파드명", align: left}
   - {field: namespace, title: "네임스페이스", align: left}
-  - {field: mem_usage, title: "평균 사용량 (MB)", align: right, format: "#,##0.0"}
-  - {field: memory_limit, title: "메모리 Limit (MB)", align: right, format: "#,##0.0"}
+  - {field: mem_usage, title: "평균 사용량 (MiB)", align: right, format: "#,##0.0"}
+  - {field: memory_limit, title: "메모리 Limit (MiB)", align: right, format: "#,##0.0"}
   - {field: memory_per_limit, title: "Limit 대비 사용률 (%)", align: right, format: "#,##0.0"}
-  - {field: mem_working_set, title: "Working Set (MB)", align: right, format: "#,##0.0"}
+  - {field: mem_working_set, title: "Working Set (MiB)", align: right, format: "#,##0.0"}
 transform:
   - {type: filterParam, field: namespace, param: namespace_filter}
   - {type: groupBy, keys: [podName, namespace], fields: {mem_usage: avg, memory_limit: avg, memory_per_limit: avg, mem_working_set: avg}}
+  - {type: scale, field: mem_usage, factor: 0.00000095367}
+  - {type: scale, field: memory_limit, factor: 0.00000095367}
+  - {type: scale, field: mem_working_set, factor: 0.00000095367}
   - {type: sortBy, by: mem_usage, desc: true}
 limit: 20
 zebra: true

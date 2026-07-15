@@ -1,5 +1,5 @@
 ---
-title: 6월 GPU 월간 사용량 보고서
+title: GPU 월간 사용량 보고서
 cadence: monthly
 params:
   - name: node
@@ -9,7 +9,7 @@ params:
     default: all
 ---
 
-# 6월 GPU 월간 사용량 보고서
+# GPU 월간 사용량 보고서
 
 ## GPU 사용 현황 요약
 
@@ -97,7 +97,7 @@ transform:
 
 ```chart-donut
 data-type: MXQL
-title: GPU 사용률 구간 분포
+title: GPU 사용률 구간 분포 (시간 비중)
 query: |
   >> avg by (Hostname) (DCGM_FI_DEV_WEIGHTED_GPU_UTIL)
 value-field: value
@@ -137,6 +137,11 @@ columns:
   - {field: Hostname, title: "노드", align: left}
   - {field: modelName, title: "GPU 모델", align: left}
   - {field: value, title: "평균 사용률 (%)", align: right, format: "#,##0.0"}
+transform:
+  - {type: filterParam, field: Hostname, param: node}
+  - {type: groupBy, keys: [Hostname, modelName], fields: {value: avg}}
+  - {type: scale, field: value, factor: 100}
+  - {type: sortBy, by: value, desc: true}
 limit: 20
 zebra: true
 ```
